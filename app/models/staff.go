@@ -23,7 +23,7 @@ type Staff struct {
 	Model
 	// ExtCorpID 外部企业ID
 	ExtCorpID string `json:"ext_corp_id" gorm:"index;uniqueIndex:idx_ext_corp_id_ext_staff_id;type:char(18);comment:外部企业ID"`
-	//企业内必须唯一。不区分大小写，长度为1~64个字节
+	// 企业内必须唯一。不区分大小写，长度为1~64个字节
 	ExtID string `gorm:"type:varchar(64);uniqueIndex:idx_ext_corp_id_ext_staff_id;comment:外部员工ID" json:"ext_staff_id"`
 	// RoleID 角色ID
 	RoleID string `json:"role_id" gorm:"type:bigint;comment:角色ID"`
@@ -61,7 +61,7 @@ type Staff struct {
 	Extattr string `json:"extattr"`
 	// 客户数量
 	CustomerCount int `json:"external_user_count"`
-	//所属部门ids
+	// 所属部门ids
 	DeptIds     constants.Int64ArrayField `gorm:"type:json" json:"dept_ids"`
 	Departments []Department              `gorm:"many2many:StaffDepartment;" json:"departments"`
 	// 欢迎语id
@@ -236,7 +236,7 @@ func (s *Staff) EnableInBatches(enableIDs []string, disableIDs []string, extCorp
 func (s *Staff) CleanCache(extCorpID string) (err error) {
 	keys := fmt.Sprintf(constants.CacheMainStaffInfoKeyPrefix, extCorpID)
 	log.Sugar.Debugw("args", "prefix", keys)
-	err = redis.RedisClient.Eval(context.TODO(), constants.DelCacheMainStaffInfoKeyScripts, []string{"KEYS"}, keys).Err()
+	err = redis.RedisClient.Eval(context.TODO(), constants.DelCacheMainStaffInfoKeyScripts, []string{"SCAN"}, keys).Err()
 	if errors.Is(err, redis2.Nil) {
 		return nil
 	}
@@ -443,11 +443,11 @@ func (s *Staff) CachedGetCustomerSummary(extStaffID, extCorpID string) (cs Custo
 func (s *Staff) GetCustomerSummary(extStaffID string, extCorpID string) (cs CustomerSummary, err error) {
 	todayStart := util.Today()
 	todayEnd := todayStart.Add(24 * time.Hour)
-	//db := DB.Model(&CorpSetting{}).Where("ext_corp_id = ?", extCorpID)
-	//err = db.Select("corp_name").Find(&cs.CorpName).Error
-	//if err != nil {
+	// db := DB.Model(&CorpSetting{}).Where("ext_corp_id = ?", extCorpID)
+	// err = db.Select("corp_name").Find(&cs.CorpName).Error
+	// if err != nil {
 	//	return
-	//}
+	// }
 
 	db := DB.Model(&Staff{}).Where("ext_corp_id = ?", extCorpID)
 	err = db.Count(&cs.TotalStaffsNum).Error

@@ -15,10 +15,14 @@ const (
 
 const (
 	DelCacheMainStaffInfoKeyScripts string = `
-	local key_list = redis.call(KEYS[1], ARGV[1])
-	if #key_list > 0 then
-		return (redis.call('DEL', unpack(key_list)))
-	else
-		return nil
-	end`
+	local cursor = '0'
+	repeat
+    local result = redis.call(KEYS[1], cursor，'MATCH', ARGV[1], 'COUNT', 100)
+    cursor = result[1]
+	local keys = result[2]
+	for _, key in ipairs(keys) do
+		redis.call('DEL', key)
+	end
+	until cursor == '0'
+	`
 )
