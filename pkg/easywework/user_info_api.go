@@ -34,7 +34,7 @@ type UpdateUserReq struct {
 				URL   string `json:"url"`
 			} `json:"web"`
 		} `json:"attrs"`
-	} `json:"extattr,omitempty"` //自定义字段。自定义字段需要先在WEB管理端添加，见<a href="#10016/扩展属性的添加方法">扩展属性添加方法</a>，否则忽略未知属性的赋值。与对外属性一致，不过只支持type=0的文本和type=1的网页类型，详细描述查看<a href="#13450">对外属性</a>
+	} `json:"extattr,omitempty"` // 自定义字段。自定义字段需要先在WEB管理端添加，见<a href="#10016/扩展属性的添加方法">扩展属性添加方法</a>，否则忽略未知属性的赋值。与对外属性一致，不过只支持type=0的文本和type=1的网页类型，详细描述查看<a href="#13450">对外属性</a>
 	// ExternalPosition 对外职务，如果设置了该值，则以此作为对外展示的职务，否则以position来展示。不超过12个汉字
 	ExternalPosition string `json:"external_position,omitempty"`
 	ExternalProfile  struct {
@@ -56,7 +56,7 @@ type UpdateUserReq struct {
 			} `json:"web"`
 		} `json:"external_attr"`
 		ExternalCorpName string `json:"external_corp_name"`
-	} `json:"external_profile,omitempty"` //成员对外属性，字段详情见<a href="#13450">对外属性</a>
+	} `json:"external_profile,omitempty"` // 成员对外属性，字段详情见<a href="#13450">对外属性</a>
 	// Gender 性别。1表示男性，2表示女性
 	Gender string `json:"gender,omitempty"`
 	// IsLeaderInDept 上级字段，个数必须和department一致，表示在所在的部门内是否为上级。
@@ -323,13 +323,31 @@ func (c *App) execUserGet(req userGetReq) (userGetResp, error) {
 // execUserList 获取部门成员详情
 // 文档：https://developer.work.weixin.qq.com/document/path/90201
 func (c *App) execUserList(req userListReq) (userListResp, error) {
-	var resp userListResp
-	err := c.executeWXApiGet("/cgi-bin/user/list", req, &resp, true)
+
+	ids, err := c.execUserIdList(userIdListReq{
+		Cursor: "",
+		Limit:  1000,
+	})
+
 	if err != nil {
 		return userListResp{}, err
 	}
-	if bizErr := resp.TryIntoErr(); bizErr != nil {
-		return userListResp{}, bizErr
+	resp := userListResp{
+		CommonResp: CommonResp{
+			ErrCode: 0,
+			ErrMsg:  "ok",
+		},
+		Users: make([]*userDetailResp, 0),
+	}
+
+	for _, id := range ids.UserIdInfos {
+		req := userGetReq{
+			UserID: id.UserId,
+		}
+		sr, err := c.execUserGet(req)
+		if err == nil {
+			resp.Users = append(resp.Users, &sr.userDetailResp)
+		}
 	}
 
 	return resp, nil
