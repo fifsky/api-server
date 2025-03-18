@@ -17,12 +17,11 @@ const (
 	DelCacheMainStaffInfoKeyScripts string = `
 	local cursor = '0'
 	repeat
-    local result = redis.call(KEYS[1], cursor，'MATCH', ARGV[1], 'COUNT', 100)
-    cursor = result[1]
-	local keys = result[2]
-	for _, key in ipairs(keys) do
-		redis.call('DEL', key)
-	end
-	until cursor == '0'
-	`
+		local result = redis.call(KEYS[1], cursor，'MATCH', ARGV[1], 'COUNT', 100)
+		cursor = result[1]
+		local key_list = result[2]
+		for _, key in ipairs(key_list) do
+			redis.call('DEL', key)
+		end
+	until cursor == '0'`
 )
