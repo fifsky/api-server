@@ -2,10 +2,12 @@ package models
 
 import (
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	redis2 "github.com/redis/go-redis/v9"
-	"golang.org/x/net/context"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"openscrm/app/constants"
@@ -15,8 +17,6 @@ import (
 	"openscrm/common/redis"
 	"openscrm/common/util"
 	"openscrm/conf"
-	"os"
-	"time"
 )
 
 type Staff struct {
@@ -234,13 +234,7 @@ func (s *Staff) EnableInBatches(enableIDs []string, disableIDs []string, extCorp
 }
 
 func (s *Staff) CleanCache(extCorpID string) (err error) {
-	keys := fmt.Sprintf(constants.CacheMainStaffInfoKeyPrefix, extCorpID)
-	log.Sugar.Debugw("args", "prefix", keys)
-	err = redis.RedisClient.Eval(context.TODO(), constants.DelCacheMainStaffInfoKeyScripts, []string{"SCAN"}, keys).Err()
-	if errors.Is(err, redis2.Nil) {
-		return nil
-	}
-	return
+	return nil
 }
 
 // CleanStaffSummaryCache
@@ -278,16 +272,7 @@ func (s *Staff) GetWelcomeMsgByExtStaffID(extStaffID string, extCorpID string) (
 }
 
 func (s *Staff) CachedQueryMainInfo(req requests.QueryMainStaffInfoReq, extCorpID string, pager *app.Pager) (StaffsMainInfoCache, error) {
-	var staffsCached StaffsMainInfoCache
-	err := redis.GetOrSetFunc(
-		fmt.Sprintf(constants.CacheMainStaffInfoKey, extCorpID, req.ExtDepartmentID, pager.GetOffset(), pager.GetLimit()),
-		func() (interface{}, error) {
-			return s.QueryMainInfo(req, extCorpID, pager)
-		},
-		time.Hour*24,
-		&staffsCached,
-	)
-	return staffsCached, err
+	return s.QueryMainInfo(req, extCorpID, pager)
 }
 
 func (s *Staff) QueryMainInfo(req requests.QueryMainStaffInfoReq, extCorpID string, pager *app.Pager) (res StaffsMainInfoCache, err error) {
